@@ -26,7 +26,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 ### From Source
 
 ```bash
-go install github.com/user/obsidian-sync-f2p/cmd/osync@latest
+go install github.com/AlexCas/cerio-obsidian-sync/cmd/osync@latest
 ```
 
 ## Quick Start
