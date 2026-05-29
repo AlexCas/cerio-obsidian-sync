@@ -1,9 +1,10 @@
 name: Update Scoop Manifest
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -12,19 +13,22 @@ jobs:
   update-scoop-manifest:
     name: Update Scoop Manifest
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Get release version
+      - name: Get release version from tag
         id: version
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          # Get the tag from the workflow_run event
+          TAG="${{ github.event.workflow_run.head_branch }}"
           # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
+          VERSION="${TAG#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Release version: $VERSION"
+          echo "Release version: $VERSION (from tag $TAG)"
 
       - name: Download release assets
         run: |
-          gh release download "${{ github.event.release.tag_name }}" --pattern "osync_*_windows_*.zip" --dir ./assets
+          TAG="v${{ steps.version.outputs.version }}"
+          gh release download "$TAG" --pattern "osync_*_windows_*.zip" --dir ./assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
