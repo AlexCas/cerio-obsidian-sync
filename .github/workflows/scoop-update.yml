@@ -1,8 +1,9 @@
 name: Update Scoop Manifest
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -12,11 +13,6 @@ jobs:
     name: Update Scoop Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get release version
         id: version
         run: |
@@ -28,7 +24,7 @@ jobs:
 
       - name: Download release assets
         run: |
-          gh release download "${{ github.event.release.tag_name }}" --pattern "osync_v*_windows_*.zip" --dir ./assets
+          gh release download "${{ github.event.release.tag_name }}" --pattern "osync_*_windows_*.zip" --dir ./assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -47,44 +43,52 @@ jobs:
             fi
           done
 
+      - name: Checkout Scoop bucket
+        uses: actions/checkout@v4
+        with:
+          repository: AlexCas/scoop-cerio-obsync
+          token: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          path: ./bucket
+
       - name: Update manifest
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           X86_CHECKSUM="${{ steps.checksums.outputs.x86_64_checksum }}"
           ARM_CHECKSUM="${{ steps.checksums.outputs.aarch64_checksum }}"
           
-          # Read current manifest
-          MANIFEST=$(cat scoop/osync.json)
+          # Read current manifest from bucket
+          MANIFEST=$(cat ./bucket/osync.json)
           
           # Update version
           MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" '.version = $v')
           
-          # Update URLs for 64bit (GoReleaser includes 'v' prefix in filename)
+          # Update URLs for 64bit (URL has 'v' in path but NOT in filename)
           MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" \
-            '.architecture."64bit".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_v" + $v + "_windows_x86_64.zip")')
+            '.architecture."64bit".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_" + $v + "_windows_x86_64.zip")')
           
           # Update URLs for arm64
           MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" \
-            '.architecture."arm64".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_v" + $v + "_windows_aarch64.zip")')
+            '.architecture."arm64".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_" + $v + "_windows_aarch64.zip")')
           
           # Add checksums
           MANIFEST=$(echo "$MANIFEST" | jq --arg x86 "$X86_CHECKSUM" --arg arm "$ARM_CHECKSUM" \
             '.architecture."64bit".hash = $x86 | .architecture."arm64".hash = $arm')
           
           # Write updated manifest
-          echo "$MANIFEST" | jq '.' > scoop/osync.json
+          echo "$MANIFEST" | jq '.' > ./bucket/osync.json
           
           echo "Updated manifest to version $VERSION"
-          cat scoop/osync.json
+          cat ./bucket/osync.json
 
       - name: Commit and push updated manifest
         run: |
+          cd ./bucket
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add scoop/osync.json
+          git add osync.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore(scoop): update manifest to v${{ steps.version.outputs.version }}"
+            git commit -m "chore: update manifest to v${{ steps.version.outputs.version }}"
             git push
           fi
