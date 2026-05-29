@@ -1,0 +1,41 @@
+# Agent Teams Lite internal
+.atl/
+
+# Engram local config
+.engram/
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test artifacts
+*.test
+
+# Go output
+*.out
+
+# Dependency directories
+vendor/
+
+# Build output
+/bin/
+/dist/
+
+# Data directory (Docker volume)
+data/
+
+# Test vaults
+test-vault*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
