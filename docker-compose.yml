@@ -1,8 +1,6 @@
 services:
   osync-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: alexcasdev/osync:v0.1.0
     container_name: osync-server
     ports:
       - "8080:8080"
