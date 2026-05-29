@@ -14,14 +14,14 @@ import (
 
 // ASCII header for OSYNC.
 const osyncHeader = `
-╔════════════════════════════════════════════════╗
-║   ____  ____  _____  ___  ____  ____  ____    ║
-║  / __ \/ __ \/ __/ / _ \/ __ \/ __ \/ __ \   ║
-║ / /_/ / /_/ / /_  / /_/ / /_/ / /_/ / /_/ /   ║
-║ \____/\____/\__/  \____/\____/\____/\____/    ║
-║                                              ║
-║     Obsidian Vault Synchronization Tool      ║
-╚════════════════════════════════════════════════╝
+██████╗ ███████╗██╗   ██╗███╗   ██╗ ██████╗ 
+██╔═══██╗██╔════╝╚██╗ ██╔╝████╗  ██║██╔════╝ 
+██║   ██║███████╗ ╚████╔╝ ██╔██╗ ██║██║  ███╗
+██║   ██║╚════██║  ╚██╔╝  ██║╚██╗██║██║   ██║
+╚██████╔╝███████║   ██║   ██║ ╚████║╚██████╔╝
+ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝ ╚═════╝ 
+                                            
+    Obsidian Vault Synchronization Tool     
 `
 
 // Menu item types.
@@ -196,8 +196,8 @@ func (m *menuModel) View() string {
 		return ""
 	}
 
-	// Render header.
-	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Bold(true)
+	// Render header with bold style.
+	headerStyle := lipgloss.NewStyle().Bold(true)
 	header := headerStyle.Render(osyncHeader)
 
 	// Show input mode.
