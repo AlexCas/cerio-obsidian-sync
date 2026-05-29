@@ -25,27 +25,36 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION (from tag $TAG)"
 
-      - name: Download release assets
+      - name: Create assets directory
+        run: mkdir -p ./assets
+
+      - name: Download Windows x86_64 asset
         run: |
           TAG="v${{ steps.version.outputs.version }}"
-          gh release download "$TAG" --pattern "osync_*_windows_*.zip" --dir ./assets
+          FILENAME="osync_${{ steps.version.outputs.version }}_windows_x86_64.zip"
+          curl -L -o "./assets/$FILENAME" \
+            "https://github.com/AlexCas/cerio-obsidian-sync/releases/download/$TAG/$FILENAME"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Windows arm64 asset
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          FILENAME="osync_${{ steps.version.outputs.version }}_windows_aarch64.zip"
+          curl -L -o "./assets/$FILENAME" \
+            "https://github.com/AlexCas/cerio-obsidian-sync/releases/download/$TAG/$FILENAME"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate SHA256 checksums
         id: checksums
         run: |
-          for file in ./assets/*.zip; do
-            filename=$(basename "$file")
-            checksum=$(sha256sum "$file" | awk '{print $1}')
-            echo "Checksum for $filename: $checksum"
-            
-            if [[ "$filename" == *"x86_64"* ]]; then
-              echo "x86_64_checksum=$checksum" >> $GITHUB_OUTPUT
-            elif [[ "$filename" == *"aarch64"* ]]; then
-              echo "aarch64_checksum=$checksum" >> $GITHUB_OUTPUT
-            fi
-          done
+          X86_CHECKSUM=$(sha256sum ./assets/osync_${{ steps.version.outputs.version }}_windows_x86_64.zip | awk '{print $1}')
+          ARM_CHECKSUM=$(sha256sum ./assets/osync_${{ steps.version.outputs.version }}_windows_aarch64.zip | awk '{print $1}')
+          echo "x86_64_checksum=$X86_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "aarch64_checksum=$ARM_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "x86_64: $X86_CHECKSUM"
+          echo "aarch64: $ARM_CHECKSUM"
 
       - name: Checkout Scoop bucket
         uses: actions/checkout@v4
@@ -66,7 +75,7 @@ jobs:
           # Update version
           MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" '.version = $v')
           
-          # Update URLs for 64bit (URL has 'v' in path but NOT in filename)
+          # Update URLs for 64bit
           MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" \
             '.architecture."64bit".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_" + $v + "_windows_x86_64.zip")')
           
