@@ -1,0 +1,90 @@
+name: Update Scoop Manifest
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-scoop-manifest:
+    name: Update Scoop Manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get release version
+        id: version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          # Remove 'v' prefix if present
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Download release assets
+        run: |
+          gh release download "${{ github.event.release.tag_name }}" --pattern "osync_v*_windows_*.zip" --dir ./assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate SHA256 checksums
+        id: checksums
+        run: |
+          for file in ./assets/*.zip; do
+            filename=$(basename "$file")
+            checksum=$(sha256sum "$file" | awk '{print $1}')
+            echo "Checksum for $filename: $checksum"
+            
+            if [[ "$filename" == *"x86_64"* ]]; then
+              echo "x86_64_checksum=$checksum" >> $GITHUB_OUTPUT
+            elif [[ "$filename" == *"aarch64"* ]]; then
+              echo "aarch64_checksum=$checksum" >> $GITHUB_OUTPUT
+            fi
+          done
+
+      - name: Update manifest
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          X86_CHECKSUM="${{ steps.checksums.outputs.x86_64_checksum }}"
+          ARM_CHECKSUM="${{ steps.checksums.outputs.aarch64_checksum }}"
+          
+          # Read current manifest
+          MANIFEST=$(cat scoop/osync.json)
+          
+          # Update version
+          MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" '.version = $v')
+          
+          # Update URLs for 64bit (GoReleaser includes 'v' prefix in filename)
+          MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" \
+            '.architecture."64bit".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_v" + $v + "_windows_x86_64.zip")')
+          
+          # Update URLs for arm64
+          MANIFEST=$(echo "$MANIFEST" | jq --arg v "$VERSION" \
+            '.architecture."arm64".url = ("https://github.com/AlexCas/cerio-obsidian-sync/releases/download/v" + $v + "/osync_v" + $v + "_windows_aarch64.zip")')
+          
+          # Add checksums
+          MANIFEST=$(echo "$MANIFEST" | jq --arg x86 "$X86_CHECKSUM" --arg arm "$ARM_CHECKSUM" \
+            '.architecture."64bit".hash = $x86 | .architecture."arm64".hash = $arm')
+          
+          # Write updated manifest
+          echo "$MANIFEST" | jq '.' > scoop/osync.json
+          
+          echo "Updated manifest to version $VERSION"
+          cat scoop/osync.json
+
+      - name: Commit and push updated manifest
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add scoop/osync.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(scoop): update manifest to v${{ steps.version.outputs.version }}"
+            git push
+          fi
