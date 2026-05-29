@@ -15,7 +15,7 @@ Obsidian vault synchronization tool. Sync your Obsidian vaults across multiple d
 ### Via Scoop (Windows)
 
 ```powershell
-scoop bucket add cerio-obsync https://github.com/AlexCas/scoop-cerio-obsync
+scoop bucket add cerio-obsidian-sync https://github.com/AlexCas/scoop-cerio-obsync
 scoop install osync
 ```
 
@@ -31,7 +31,21 @@ go install github.com/AlexCas/cerio-obsidian-sync/cmd/osync@latest
 
 ## Quick Start
 
-### 1. Start the Server
+### 1. Interactive Menu (Recommended)
+
+```bash
+osync menu
+```
+
+The interactive TUI guides you through initialization and configuration:
+- Initialize a new vault
+- Set server URL, API key, and vault ID
+- View current configuration
+- Exit
+
+Navigate with `↑`/`↓`, select with `Enter`.
+
+### 2. Start the Server
 
 ```bash
 # Using Docker
@@ -41,14 +55,14 @@ docker compose up -d
 osync server --port 8080 --data-dir ./data
 ```
 
-### 2. Initialize a Vault
+### 3. Initialize a Vault
 
 ```bash
 cd /path/to/your/vault
 osync init
 ```
 
-### 3. Configure Connection
+### 4. Configure Connection
 
 ```bash
 osync config set server_url http://localhost:8080
@@ -56,7 +70,7 @@ osync config set api_key osync_your_api_key_here
 osync config set vault_id my-vault
 ```
 
-### 4. Sync
+### 5. Sync
 
 ```bash
 osync sync
