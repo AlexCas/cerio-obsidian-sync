@@ -1,0 +1,16 @@
+services:
+  osync-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: osync-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - OSYNC_SERVER_URL=http://localhost:8080
+      - OSYNC_API_KEY=osync_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+      - OSYNC_PORT=8080
+      - OSYNC_DATA_DIR=/data
+    restart: unless-stopped
