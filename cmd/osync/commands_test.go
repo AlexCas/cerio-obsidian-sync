@@ -383,8 +383,21 @@ func TestStatusCommand_Registered(t *testing.T) {
 	}
 }
 
+func TestMenuCommand_Registered(t *testing.T) {
+	found := false
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Use == "menu" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("menu command not registered with root")
+	}
+}
+
 func TestRootCommand_HasAllSubcommands(t *testing.T) {
-	expected := []string{"version", "init", "sync", "config", "status", "server"}
+	expected := []string{"version", "init", "sync", "config", "status", "server", "menu"}
 	commands := rootCmd.Commands()
 
 	for _, exp := range expected {
