@@ -44,6 +44,21 @@ checksum:
 snapshot:
   version_template: "{{ .Version }}-next"
 
+brews:
+  - name: osync
+    repository:
+      owner: AlexCas
+      name: homebrew-osync
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/AlexCas/cerio-obsidian-sync"
+    description: "Obsidian vault synchronization tool"
+    license: "MIT"
+    directory: Formula
+    skip_upload: false
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    test: |
+      system "#{bin}/osync", "version"
+
 changelog:
   sort: asc
   filters:

@@ -19,6 +19,13 @@ scoop bucket add cerio-obsidian-sync https://github.com/AlexCas/scoop-cerio-obsy
 scoop install osync
 ```
 
+### Via Homebrew (Linux/macOS)
+
+```bash
+brew tap AlexCas/osync
+brew install osync
+```
+
 ### Manual Download
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/AlexCas/cerio-obsidian-sync/releases).
